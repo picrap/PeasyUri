@@ -1,4 +1,5 @@
 ﻿using System;
+using PeasyUri.Utility;
 
 namespace PeasyUri;
 
@@ -9,52 +10,50 @@ public class UriParser
         if (literal is null)
             throw new ArgumentNullException(nameof(literal));
 
-        var parts = new UriComponentParts();
-
         var hierPartStart = 0;
         // last character + 1
         int hierPartEnd = literal.Length;
 
-        ExtractScheme(literal, parts, ref hierPartStart);
-        ExtractFragment(literal, parts, hierPartStart, ref hierPartEnd);
-        ExtractQuery(literal, parts, hierPartStart, ref hierPartEnd);
-        ExtractHierPart(literal, parts, hierPartStart, hierPartEnd);
+        var scheme = ExtractScheme(literal, ref hierPartStart);
+        var fragment = ExtractFragment(literal, hierPartStart, ref hierPartEnd);
+        var query = ExtractQuery(literal, hierPartStart, ref hierPartEnd);
+        var hierPart = ExtractHierPart(literal, hierPartStart, hierPartEnd);
 
-        return parts;
+        return new UriComponentParts(scheme, hierPart, query, fragment);
     }
 
-    private static void ExtractHierPart(string literal, UriComponentParts parts, int hierPartStart, int hierPartEnd)
+    private static string? ExtractScheme(string literal, ref int hierPartStart)
     {
-        parts.HierPart = literal.Substring(hierPartStart, hierPartEnd - hierPartStart);
+        var schemeIndex = literal.IndexOf(':', CharUtility.IsScheme, hierPartStart);
+        if (!schemeIndex.HasValue)
+            return null;
+        var scheme = literal.Substring(hierPartStart, schemeIndex.Value);
+        hierPartStart = schemeIndex.Value + 1;
+        return scheme;
     }
 
-    private static void ExtractQuery(string literal, UriComponentParts parts, int hierPartStart, ref int hierPartEnd)
+    private static string ExtractHierPart(string literal, int hierPartStart, int hierPartEnd)
+    {
+        return literal.Substring(hierPartStart, hierPartEnd - hierPartStart);
+    }
+
+    private static string? ExtractQuery(string literal, int hierPartStart, ref int hierPartEnd)
     {
         var queryIndex = literal.IndexOf('?', hierPartStart, hierPartEnd - hierPartStart);
-        if (queryIndex > 0)
-        {
-            parts.Query = literal.Substring(queryIndex + 1, hierPartEnd - queryIndex - 1);
-            hierPartEnd = queryIndex;
-        }
+        if (queryIndex <= 0)
+            return null;
+        var query = literal.Substring(queryIndex + 1, hierPartEnd - queryIndex - 1);
+        hierPartEnd = queryIndex;
+        return query;
     }
 
-    private static void ExtractFragment(string literal, UriComponentParts parts, int hierPartStart, ref int hierPartEnd)
+    private static string? ExtractFragment(string literal, int hierPartStart, ref int hierPartEnd)
     {
         var fragmentIndex = literal.IndexOf('#', hierPartStart);
-        if (fragmentIndex > 0)
-        {
-            parts.Fragment = literal.Substring(fragmentIndex + 1);
-            hierPartEnd = fragmentIndex;
-        }
-    }
-
-    private static void ExtractScheme(string literal, UriComponentParts parts, ref int hierPartStart)
-    {
-        var schemeIndex = literal.IndexOf(':');
-        if (schemeIndex > 0)
-        {
-            parts.Scheme = literal.Substring(0, schemeIndex);
-            hierPartStart = schemeIndex + 1;
-        }
+        if (fragmentIndex <= 0)
+            return null;
+        var fragment = literal.Substring(fragmentIndex + 1);
+        hierPartEnd = fragmentIndex;
+        return fragment;
     }
 }
