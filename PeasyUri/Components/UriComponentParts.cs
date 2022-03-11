@@ -1,4 +1,4 @@
-﻿namespace PeasyUri;
+﻿namespace PeasyUri.Components;
 
 public record UriComponentParts(string? Scheme, string HierPart, string? Query, string? Fragment) // not full record, it fails with .NET4
 {
