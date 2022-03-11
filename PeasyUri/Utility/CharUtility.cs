@@ -20,12 +20,4 @@ internal static class CharUtility
     public static bool IsDigit(this char c) => "0123456789".Contains(c);
     public static bool IsUnreserved(this char c) => IsAlpha(c) || IsDigit(c) || "-._~".Contains(c);
 
-    public static bool IsScheme(this char c, int index)
-    {
-        return index switch
-        {
-            0 => IsAlpha(c),
-            _ => IsAlpha(c) || IsDigit(c) || "+-.".Contains(c)
-        };
-    }
 }

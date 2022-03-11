@@ -2,11 +2,13 @@
 
 namespace PeasyUri.Utility;
 
+public delegate bool IsValidCharacterDelegate(char c, int index);
+
 internal static class StringUtility
 {
     public static bool Contains(this string s, char c) => s.IndexOf(c) >= 0;
 
-    public static int? IndexOf(this string s, char c, Func<char, int, bool>? validCharacter, int first = 0, int? count = null)
+    public static int? IndexOf(this string s, char c, IsValidCharacterDelegate? validCharacter, int first = 0, int? count = null)
     {
         var actualCount = count ?? s.Length - first;
         for (int i = 0, j = first; i < actualCount; i++, j++)

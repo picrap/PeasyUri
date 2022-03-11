@@ -22,38 +22,45 @@ public class UriParser
         return new UriComponentParts(scheme, hierPart, query, fragment);
     }
 
-    private static string? ExtractScheme(string literal, ref int hierPartStart)
+    protected virtual string? ExtractScheme(string literal, ref int hierPartStart) => ExtractBeginPart(':', literal, ref hierPartStart, IsScheme);
+
+    protected virtual string ExtractHierPart(string literal, int hierPartStart, int hierPartEnd) => ExtractMiddlePart(literal, hierPartStart, hierPartEnd);
+
+    protected virtual string? ExtractQuery(string literal, int hierPartStart, ref int hierPartEnd) => ExtractEndPart('?', literal, hierPartStart, ref hierPartEnd);
+
+    protected virtual string? ExtractFragment(string literal, int hierPartStart, ref int hierPartEnd) => ExtractEndPart('#', literal, hierPartStart, ref hierPartEnd);
+
+    protected virtual string? ExtractBeginPart(char delimiter, string literal, ref int hierPartStart, IsValidCharacterDelegate? isValidCharacter = null)
     {
-        var schemeIndex = literal.IndexOf(':', CharUtility.IsScheme, hierPartStart);
-        if (!schemeIndex.HasValue)
+        var index = literal.IndexOf(delimiter, isValidCharacter, hierPartStart);
+        if (!index.HasValue)
             return null;
-        var scheme = literal.Substring(hierPartStart, schemeIndex.Value);
-        hierPartStart = schemeIndex.Value + 1;
-        return scheme;
+        var part = literal.Substring(hierPartStart, index.Value);
+        hierPartStart = index.Value + 1;
+        return part;
     }
 
-    private static string ExtractHierPart(string literal, int hierPartStart, int hierPartEnd)
+    protected virtual string ExtractMiddlePart(string literal, int hierPartStart, int hierPartEnd)
     {
         return literal.Substring(hierPartStart, hierPartEnd - hierPartStart);
     }
 
-    private static string? ExtractQuery(string literal, int hierPartStart, ref int hierPartEnd)
+    protected virtual string? ExtractEndPart(char delimiter, string literal, int hierPartStart, ref int hierPartEnd, IsValidCharacterDelegate? isValidCharacter = null)
     {
-        var queryIndex = literal.IndexOf('?', hierPartStart, hierPartEnd - hierPartStart);
-        if (queryIndex <= 0)
+        var index = literal.IndexOf(delimiter, hierPartStart, hierPartEnd - hierPartStart);
+        if (index <= 0)
             return null;
-        var query = literal.Substring(queryIndex + 1, hierPartEnd - queryIndex - 1);
-        hierPartEnd = queryIndex;
-        return query;
+        var part = literal.Substring(index + 1, hierPartEnd - index - 1);
+        hierPartEnd = index;
+        return part;
     }
 
-    private static string? ExtractFragment(string literal, int hierPartStart, ref int hierPartEnd)
+    protected virtual bool IsScheme(char c, int index)
     {
-        var fragmentIndex = literal.IndexOf('#', hierPartStart);
-        if (fragmentIndex <= 0)
-            return null;
-        var fragment = literal.Substring(fragmentIndex + 1);
-        hierPartEnd = fragmentIndex;
-        return fragment;
+        return index switch
+        {
+            0 => c.IsAlpha(),
+            _ => c.IsAlpha() || c.IsDigit() || "+-.".Contains(c)
+        };
     }
 }
