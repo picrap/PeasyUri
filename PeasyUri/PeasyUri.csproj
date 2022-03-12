@@ -15,9 +15,15 @@
 	  <SignAssembly>True</SignAssembly>
 	  <AssemblyOriginatorKeyFile>PeasyUri.snk</AssemblyOriginatorKeyFile>
 	  <VersionPrefix>0.1</VersionPrefix>
+	  <PackageTags>RFC3986 URI parser</PackageTags>
+	  <PackageIcon>PeasyUri.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\Icon\PeasyUri.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
