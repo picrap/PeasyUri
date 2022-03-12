@@ -4,17 +4,17 @@ using PeasyUri;
 namespace PeasyUriTest;
 
 [TestFixture]
-public class Parser
+public class UriParserTests
 {
     [Test]
     public void FullUri()
     {
         var uriParser = new UriParser();
         var parts = uriParser.Parse("foo://example.com:8042/over/there?name=ferret#nose");
-        Assert.AreEqual("foo", parts.Scheme);
-        Assert.AreEqual("//example.com:8042/over/there", parts.HierPart);
-        Assert.AreEqual("name=ferret", parts.Query);
-        Assert.AreEqual("nose", parts.Fragment);
+        Assert.IsTrue(parts.Scheme == "foo");
+        Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
+        Assert.IsTrue(parts.Query == "name=ferret");
+        Assert.IsTrue(parts.Fragment == "nose");
     }
 
     [Test]
@@ -23,9 +23,9 @@ public class Parser
         var uriParser = new UriParser();
         var parts = uriParser.Parse("//example.com:8042/over/there?name=ferret#nose");
         Assert.IsNull(null, parts.Scheme);
-        Assert.AreEqual("//example.com:8042/over/there", parts.HierPart);
-        Assert.AreEqual("name=ferret", parts.Query);
-        Assert.AreEqual("nose", parts.Fragment);
+        Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
+        Assert.IsTrue(parts.Query == "name=ferret");
+        Assert.IsTrue(parts.Fragment == "nose");
     }
 
     [Test]
@@ -33,9 +33,9 @@ public class Parser
     {
         var uriParser = new UriParser();
         var parts = uriParser.Parse("foo://example.com:8042/over/there?name=ferret");
-        Assert.AreEqual("foo", parts.Scheme);
-        Assert.AreEqual("//example.com:8042/over/there", parts.HierPart);
-        Assert.AreEqual("name=ferret", parts.Query);
+        Assert.IsTrue(parts.Scheme == "foo");
+        Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
+        Assert.IsTrue(parts.Query == "name=ferret");
         Assert.IsNull(parts.Fragment);
     }
 
@@ -44,10 +44,10 @@ public class Parser
     {
         var uriParser = new UriParser();
         var parts = uriParser.Parse("foo://example.com:8042/over/there#nose");
-        Assert.AreEqual("foo", parts.Scheme);
-        Assert.AreEqual("//example.com:8042/over/there", parts.HierPart);
+        Assert.IsTrue(parts.Scheme == "foo");
+        Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
         Assert.IsNull(parts.Query);
-        Assert.AreEqual("nose", parts.Fragment);
+        Assert.IsTrue(parts.Fragment == "nose");
     }
 
 
@@ -56,8 +56,8 @@ public class Parser
     {
         var uriParser = new UriParser();
         var parts = uriParser.Parse("foo://example.com:8042/over/there");
-        Assert.AreEqual("foo", parts.Scheme);
-        Assert.AreEqual("//example.com:8042/over/there", parts.HierPart);
+        Assert.IsTrue(parts.Scheme == "foo");
+        Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
         Assert.IsNull(parts.Query);
         Assert.IsNull(parts.Fragment);
     }
@@ -67,8 +67,8 @@ public class Parser
     {
         var uriParser = new UriParser();
         var parts = uriParser.Parse("urn:example:animal:ferret:nose");
-        Assert.AreEqual("urn", parts.Scheme);
-        Assert.AreEqual("example:animal:ferret:nose", parts.HierPart);
+        Assert.IsTrue("urn" == parts.Scheme);
+        Assert.IsTrue(parts.HierPart == "example:animal:ferret:nose");
         Assert.IsNull(parts.Query);
         Assert.IsNull(parts.Fragment);
     }
@@ -78,7 +78,7 @@ public class Parser
     {
         var uriParser = new UriParser();
         var parts = uriParser.Parse("//example.com:8042/over/there");
-        Assert.AreEqual("example.com:8042", parts.Authority);
-        Assert.AreEqual("/over/there", parts.Path);
+        Assert.IsTrue(parts.Authority == "example.com:8042");
+        Assert.IsTrue(parts.Path == "/over/there");
     }
 }

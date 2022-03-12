@@ -32,7 +32,9 @@ public class UriParser
         var hierPart = ExtractHierPart(literal, remainingPartStart, remainingPartEnd);
         var authorityAndPath = ParseHierPart(hierPart);
 
-        return new UriComponentParts(scheme, hierPart, authorityAndPath.Authority, authorityAndPath.Path, query, fragment);
+        return new UriComponentParts(scheme,
+            EncodedString.FromEncoded(hierPart)!, authorityAndPath.Authority, EncodedString.FromEncoded(authorityAndPath.Path)!,
+            EncodedString.FromEncoded(query), EncodedString.FromEncoded(fragment));
     }
 
     protected virtual AuthorityAndPath ParseHierPart(string hierPart)
@@ -44,7 +46,7 @@ public class UriParser
         var path = ExtractMiddlePart(hierPart, remainingPartStart - 1, hierPart.Length);
         return new(authority, path);
     }
-    
+
     protected virtual string? ExtractScheme(string literal, ref int remainingPartStart) => ExtractBeginPart(literal, ':', ref remainingPartStart, IsScheme);
 
     protected virtual string ExtractHierPart(string literal, int remainingPartStart, int remainingPartEnd) => ExtractMiddlePart(literal, remainingPartStart, remainingPartEnd);
