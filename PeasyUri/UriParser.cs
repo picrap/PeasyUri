@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using PeasyUri.Components;
 using PeasyUri.Utility;
 
@@ -16,6 +17,11 @@ public class UriParser
             Authority = authority;
             Path = path;
         }
+    }
+
+    public UriComponentParts Parse(EncodedString literal)
+    {
+        return Parse(literal.ToEncodedString());
     }
 
     public UriComponentParts Parse(string literal)

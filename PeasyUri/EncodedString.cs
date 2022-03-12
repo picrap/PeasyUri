@@ -18,6 +18,7 @@ public class EncodedString : IEquatable<EncodedString>
         _encodedString = encoded;
     }
 
+    public static EncodedString? FromEncoded(byte[]? encoded) => encoded is null ? null : new(Encoding.ASCII.GetString(encoded));
     public static EncodedString? FromEncoded(string? encoded) => encoded is null ? null : new(encoded);
 
     public string ToEncodedString() => _encodedString;
