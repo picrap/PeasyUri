@@ -11,14 +11,13 @@ public class UriParser
         if (literal is null)
             throw new ArgumentNullException(nameof(literal));
 
-        var hierPartStart = 0;
-        // last character + 1
-        int hierPartEnd = literal.Length;
+        var remainingPartStart = 0;
+        var remainingPartEnd = literal.Length; // last character + 1
 
-        var scheme = ExtractScheme(literal, ref hierPartStart);
-        var fragment = ExtractFragment(literal, hierPartStart, ref hierPartEnd);
-        var query = ExtractQuery(literal, hierPartStart, ref hierPartEnd);
-        var hierPart = ExtractHierPart(literal, hierPartStart, hierPartEnd);
+        var scheme = ExtractScheme(literal, ref remainingPartStart);
+        var fragment = ExtractFragment(literal, remainingPartStart, ref remainingPartEnd);
+        var query = ExtractQuery(literal, remainingPartStart, ref remainingPartEnd);
+        var hierPart = ExtractHierPart(literal, remainingPartStart, remainingPartEnd);
 
         return new UriComponentParts(scheme, hierPart, query, fragment);
     }
@@ -27,9 +26,9 @@ public class UriParser
     {
         if (!hierPart.StartsWith("//"))
             return new(null, hierPart);
-        var hierPartStart = 2;
-        var authority = ExtractBeginPart(hierPart, '/', ref hierPartStart);
-        var path = ExtractMiddlePart(hierPart, hierPartStart - 1, hierPart.Length);
+        var remainingPartStart = 2;
+        var authority = ExtractBeginPart(hierPart, '/', ref remainingPartStart);
+        var path = ExtractMiddlePart(hierPart, remainingPartStart - 1, hierPart.Length);
         return new(authority, path);
     }
 
@@ -40,36 +39,36 @@ public class UriParser
         return new(componentParts, authorityAndPath);
     }
 
-    protected virtual string? ExtractScheme(string literal, ref int hierPartStart) => ExtractBeginPart(literal, ':', ref hierPartStart, IsScheme);
+    protected virtual string? ExtractScheme(string literal, ref int remainingPartStart) => ExtractBeginPart(literal, ':', ref remainingPartStart, IsScheme);
 
-    protected virtual string ExtractHierPart(string literal, int hierPartStart, int hierPartEnd) => ExtractMiddlePart(literal, hierPartStart, hierPartEnd);
+    protected virtual string ExtractHierPart(string literal, int remainingPartStart, int remainingPartEnd) => ExtractMiddlePart(literal, remainingPartStart, remainingPartEnd);
 
-    protected virtual string? ExtractQuery(string literal, int hierPartStart, ref int hierPartEnd) => ExtractEndPart(literal, '?', hierPartStart, ref hierPartEnd);
+    protected virtual string? ExtractQuery(string literal, int remainingPartStart, ref int remainingPartEnd) => ExtractEndPart(literal, '?', remainingPartStart, ref remainingPartEnd);
 
-    protected virtual string? ExtractFragment(string literal, int hierPartStart, ref int hierPartEnd) => ExtractEndPart(literal, '#', hierPartStart, ref hierPartEnd);
+    protected virtual string? ExtractFragment(string literal, int remainingPartStart, ref int remainingPartEnd) => ExtractEndPart(literal, '#', remainingPartStart, ref remainingPartEnd);
 
-    protected virtual string? ExtractBeginPart(string literal, char delimiter, ref int hierPartStart, IsValidCharacterDelegate? isValidCharacter = null)
+    protected virtual string? ExtractBeginPart(string literal, char delimiter, ref int remainingPartStart, IsValidCharacterDelegate? isValidCharacter = null)
     {
-        var index = literal.IndexOf(delimiter, isValidCharacter, hierPartStart);
+        var index = literal.IndexOf(delimiter, isValidCharacter, remainingPartStart);
         if (!index.HasValue)
             return null;
-        var part = literal.Substring(hierPartStart, index.Value - hierPartStart);
-        hierPartStart = index.Value + 1;
+        var part = literal.Substring(remainingPartStart, index.Value - remainingPartStart);
+        remainingPartStart = index.Value + 1;
         return part;
     }
 
-    protected virtual string ExtractMiddlePart(string literal, int hierPartStart, int hierPartEnd)
+    protected virtual string ExtractMiddlePart(string literal, int remainingPartStart, int remainingPartEnd)
     {
-        return literal.Substring(hierPartStart, hierPartEnd - hierPartStart);
+        return literal.Substring(remainingPartStart, remainingPartEnd - remainingPartStart);
     }
 
-    protected virtual string? ExtractEndPart(string literal, char delimiter, int hierPartStart, ref int hierPartEnd, IsValidCharacterDelegate? isValidCharacter = null)
+    protected virtual string? ExtractEndPart(string literal, char delimiter, int remainingPartStart, ref int remainingPartEnd, IsValidCharacterDelegate? isValidCharacter = null)
     {
-        var index = literal.IndexOf(delimiter, isValidCharacter, hierPartStart, hierPartEnd - hierPartStart);
+        var index = literal.IndexOf(delimiter, isValidCharacter, remainingPartStart, remainingPartEnd - remainingPartStart);
         if (!index.HasValue)
             return null;
-        var part = literal.Substring(index.Value + 1, hierPartEnd - index.Value - 1);
-        hierPartEnd = index.Value;
+        var part = literal.Substring(index.Value + 1, remainingPartEnd - index.Value - 1);
+        remainingPartEnd = index.Value;
         return part;
     }
 
