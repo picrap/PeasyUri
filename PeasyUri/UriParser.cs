@@ -6,7 +6,19 @@ namespace PeasyUri;
 
 public class UriParser
 {
-    public UriComponentParts ParseUri(string literal)
+    protected class AuthorityAndPath
+    {
+        public string? Authority { get; }
+        public string Path { get; }
+
+        public AuthorityAndPath(string? authority, string path)
+        {
+            Authority = authority;
+            Path = path;
+        }
+    }
+
+    public UriComponentParts Parse(string literal)
     {
         if (literal is null)
             throw new ArgumentNullException(nameof(literal));
@@ -18,11 +30,12 @@ public class UriParser
         var fragment = ExtractFragment(literal, remainingPartStart, ref remainingPartEnd);
         var query = ExtractQuery(literal, remainingPartStart, ref remainingPartEnd);
         var hierPart = ExtractHierPart(literal, remainingPartStart, remainingPartEnd);
+        var authorityAndPath = ParseHierPart(hierPart);
 
-        return new UriComponentParts(scheme, hierPart, query, fragment);
+        return new UriComponentParts(scheme, hierPart, authorityAndPath.Authority, authorityAndPath.Path, query, fragment);
     }
 
-    public UriComponentAuthorityAndPath ParseHierPart(string hierPart)
+    protected virtual AuthorityAndPath ParseHierPart(string hierPart)
     {
         if (!hierPart.StartsWith("//"))
             return new(null, hierPart);
@@ -31,14 +44,7 @@ public class UriParser
         var path = ExtractMiddlePart(hierPart, remainingPartStart - 1, hierPart.Length);
         return new(authority, path);
     }
-
-    public UriComponentSubParts Parse(string literal)
-    {
-        var componentParts = ParseUri(literal);
-        var authorityAndPath = ParseHierPart(componentParts.HierPart);
-        return new(componentParts, authorityAndPath);
-    }
-
+    
     protected virtual string? ExtractScheme(string literal, ref int remainingPartStart) => ExtractBeginPart(literal, ':', ref remainingPartStart, IsScheme);
 
     protected virtual string ExtractHierPart(string literal, int remainingPartStart, int remainingPartEnd) => ExtractMiddlePart(literal, remainingPartStart, remainingPartEnd);
