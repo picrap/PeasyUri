@@ -1,7 +1,7 @@
 
 branches:
   only:
-    - master
+    - main
 
 version: '{branch}-{build}'
 image: Visual Studio 2022
