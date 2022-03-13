@@ -6,6 +6,14 @@ branches:
 version: '{branch}-{build}'
 image: Visual Studio 2022
 
+before_build:
+  nuget restore
+
+nuget:
+  account_feed: true
+  project_feed: true
+  disable_publish_on_pr: true
+
 configuration: Release
 
 build:
