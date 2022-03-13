@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Text;
+using System.Collections.Generic;
+using System.Linq;
 using PeasyUri.Components;
 using PeasyUri.Utility;
 
@@ -37,10 +38,16 @@ public class UriParser
         var query = ExtractQuery(literal, remainingPartStart, ref remainingPartEnd);
         var hierPart = ExtractHierPart(literal, remainingPartStart, remainingPartEnd);
         var authorityAndPath = ParseHierPart(hierPart);
+        var segments = ParsePath(authorityAndPath.Path);
 
         return new UriComponentParts(scheme,
-            EncodedString.FromEncoded(hierPart)!, authorityAndPath.Authority, EncodedString.FromEncoded(authorityAndPath.Path)!,
+            EncodedString.FromEncoded(hierPart)!, authorityAndPath.Authority, EncodedString.FromEncoded(authorityAndPath.Path)!, segments,
             EncodedString.FromEncoded(query), EncodedString.FromEncoded(fragment));
+    }
+
+    protected virtual IEnumerable<string> ParsePath(string path)
+    {
+        return path.Split('/').Select(s => EncodedString.FromEncoded(s)!.Decode());
     }
 
     protected virtual AuthorityAndPath ParseHierPart(string hierPart)

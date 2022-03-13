@@ -1,12 +1,28 @@
-﻿namespace PeasyUri.Components;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 
-// not full record, it fails with .NET4
-public record UriComponentParts(string? Scheme, EncodedString HierPart, string? Authority, EncodedString Path, EncodedString? Query, EncodedString? Fragment) 
+namespace PeasyUri.Components;
+
+public record UriComponentParts
 {
-    public string? Scheme { get; } = Scheme;
-    public EncodedString HierPart { get; } = HierPart;
-    public string? Authority { get; } = Authority;
-    public EncodedString Path { get; } = Path;
-    public EncodedString? Query { get; } = Query;
-    public EncodedString? Fragment { get; } = Fragment;
+    public string? Scheme { get; }
+    public EncodedString HierPart { get; }
+    public string? Authority { get; }
+    public EncodedString Path { get; }
+    public ICollection<string> Segments { get; }
+    public EncodedString? Query { get; }
+    public EncodedString? Fragment { get; }
+
+    public UriComponentParts(string? scheme, EncodedString hierPart, string? authority, EncodedString path, IEnumerable<string> segments,
+        EncodedString? query, EncodedString? fragment)
+    {
+        Scheme = scheme;
+        HierPart = hierPart;
+        Authority = authority;
+        Path = path;
+        Segments = new ReadOnlyCollection<string>(segments.ToArray());
+        Query = query;
+        Fragment = fragment;
+    }
 }
