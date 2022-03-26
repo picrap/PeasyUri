@@ -17,3 +17,15 @@ The goals are:
 ## How to use it?
 
 Currently, you don’t.  
+
+## Features to be implemented
+
+(a package will be released after that)
+
+- [ ] Authority decoder
+- [ ] Work on `EncodedString` instead of `string`
+- [ ] Host name decoder
+- [ ] Create `PeasyUri` class (or keep it as `PeasyUri.Uri` if API is the same?)
+- [ ] HTTP specific query decoding
+- [ ] Get default port (from `Uri`?)
+- [ ] Add an URI creator (see how)

@@ -5,7 +5,13 @@ VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PeasyUri", "PeasyUri\PeasyUri.csproj", "{6839CCAD-1EEF-4D0B-BAC2-1271067DDFA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeasyUriTest", "PeasyUriTest\PeasyUriTest.csproj", "{CC77BBC9-7FCE-48DD-8362-CEB9BF74DBDD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PeasyUriTest", "PeasyUriTest\PeasyUriTest.csproj", "{CC77BBC9-7FCE-48DD-8362-CEB9BF74DBDD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A4A89F6B-4B73-4A97-A9EC-D8FC54FB935C}"
+	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
