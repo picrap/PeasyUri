@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Security;
 using PeasyUri.Components;
 using PeasyUri.Utility;
 
@@ -120,7 +119,9 @@ public class UriParser
 
         var password = ExtractEndPart(userInfo, ':', remainingPartStart, ref remainingPartEnd);
         if (password is null)
+#pragma warning disable CS8600
             return new NetworkCredential(userInfo.Decode(), (string)null);
+#pragma warning restore CS8600
         var userName = ExtractMiddlePart(userInfo, remainingPartStart, remainingPartEnd);
         return new NetworkCredential(userName.Decode(), password.Decode());
     }
@@ -135,10 +136,12 @@ public class UriParser
 
     protected virtual EncodedString? ExtractBeginPart(EncodedString literal, char delimiter, ref int remainingPartStart, IsValidCharacterDelegate? isValidCharacter = null)
     {
-        var index = literal.IndexOf(delimiter, isValidCharacter, remainingPartStart);
+        var index = literal.IndexOf(delimiter, remainingPartStart);
         if (!index.HasValue)
             return null;
         var part = literal.Substring(remainingPartStart, index.Value - remainingPartStart);
+        if (!part.IsValid(isValidCharacter))
+            return null;
         remainingPartStart = index.Value + 1;
         return part;
     }
@@ -149,22 +152,17 @@ public class UriParser
     }
 
     protected virtual EncodedString? ExtractEndPart(EncodedString literal, char delimiter, int remainingPartStart, ref int remainingPartEnd,
-        IsValidCharacterDelegate? isValidCharacter = null, bool keepDelimiter = false)
+        IsValidCharacterDelegate? isValidCharacter = null, bool keepDelimiter = false, bool lastDelimiter = false)
     {
-        var index = literal.IndexOf(delimiter, null, remainingPartStart, remainingPartEnd - remainingPartStart);
+        var index = lastDelimiter
+            ? literal.LastIndexOf(delimiter, remainingPartStart, remainingPartEnd - remainingPartStart)
+            : literal.IndexOf(delimiter, remainingPartStart, remainingPartEnd - remainingPartStart);
         if (!index.HasValue)
             return null;
         var offset = keepDelimiter ? 0 : 1;
         var part = literal.Substring(index.Value + offset, remainingPartEnd - index.Value - offset);
-        if (isValidCharacter is not null)
-        {
-            var encodedPart = part.ToEncodedString();
-            for (int testIndex = 0; testIndex < part.Length; testIndex++)
-            {
-                if (!isValidCharacter(encodedPart[testIndex], testIndex))
-                    return null;
-            }
-        }
+        if (!part.IsValid(isValidCharacter))
+            return null;
         remainingPartEnd = index.Value;
         return part;
     }

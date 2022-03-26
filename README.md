@@ -25,7 +25,7 @@ Currently, you don’t.
 - [x] Authority decoder
 - [x] Work on `EncodedString` instead of `string`
 - [x] User info splitter
-- [ ] Host name decoder
+- [x] Host name decoder
 - [ ] Create `PeasyUri` class (or keep it as `PeasyUri.Uri` if API is the same?)
 - [ ] HTTP specific query decoding
 - [ ] Get default port (from `Uri`?)

@@ -126,9 +126,14 @@ public class EncodedString : IEquatable<EncodedString>, IEnumerable<byte>
 
     public bool Contains(char c) => IndexOf(c).HasValue;
 
-    public int? IndexOf(char c, IsValidCharacterDelegate? validCharacter = null, int first = 0, int? count = null)
+    public int? IndexOf(char c, int first = 0, int? count = null)
     {
-        return _encodedString.IndexOf(c, validCharacter, first, count);
+        return _encodedString.IndexOf(c, first, count);
+    }
+
+    public int? LastIndexOf(char c, int first = 0, int? count = null)
+    {
+        return _encodedString.LastIndexOf(c, first, count);
     }
 
     public bool StartsWith(string s)
@@ -140,5 +145,19 @@ public class EncodedString : IEquatable<EncodedString>, IEnumerable<byte>
     {
         var indexOf = _encodedString.IndexOf(s, StringComparison.InvariantCulture);
         return indexOf < 0 ? null : indexOf;
+    }
+
+    public bool IsValid(IsValidCharacterDelegate? isValidCharacterDelegate)
+    {
+        if (isValidCharacterDelegate is null)
+            return true;
+
+        var index = 0;
+        foreach (var c in _encodedString)
+        {
+            if (!isValidCharacterDelegate(c, index++))
+                return false;
+        }
+        return true;
     }
 }
