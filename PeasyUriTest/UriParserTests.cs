@@ -50,7 +50,6 @@ public class UriParserTests
         Assert.IsTrue(parts.Fragment == "nose");
     }
 
-
     [Test]
     public void UriPathOnly()
     {
@@ -58,6 +57,18 @@ public class UriParserTests
         var parts = uriParser.Parse("foo://example.com:8042/over/there");
         Assert.IsTrue(parts.Scheme == "foo");
         Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
+        Assert.IsNull(parts.Query);
+        Assert.IsNull(parts.Fragment);
+    }
+
+    [Test]
+    public void UriNoPath()
+    {
+        var uriParser = new UriParser();
+        var parts = uriParser.Parse("foo://example.com:8042");
+        Assert.IsTrue(parts.Scheme == "foo");
+        Assert.IsTrue(parts.HierPart == "//example.com:8042");
+        Assert.IsTrue(parts.Authority == "example.com:8042");
         Assert.IsNull(parts.Query);
         Assert.IsNull(parts.Fragment);
     }
@@ -80,5 +91,13 @@ public class UriParserTests
         var parts = uriParser.Parse("//example.com:8042/over/there");
         Assert.IsTrue(parts.Authority == "example.com:8042");
         Assert.IsTrue(parts.Path == "/over/there");
+    }
+
+    [Test]
+    public void DecodeAuthority()
+    {
+        var uriParser = new UriParser();
+        var parts = uriParser.Parse("foo://xn--bpo-bma");
+        Assert.IsTrue(parts.DecodedAuthority == "bépo");
     }
 }

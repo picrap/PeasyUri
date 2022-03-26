@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using PeasyUri.Components;
 using PeasyUri.Utility;
@@ -8,24 +9,40 @@ namespace PeasyUri;
 
 public class UriParser
 {
-    protected class AuthorityAndPath
-    {
-        public string? Authority { get; }
-        public string Path { get; }
+    protected static IdnMapping IdnMapping { get; } = new IdnMapping();
 
-        public AuthorityAndPath(string? authority, string path)
+    protected class AuthorityAndPathPart
+    {
+        public EncodedString? Authority { get; }
+        public EncodedString Path { get; }
+
+        public AuthorityAndPathPart(EncodedString? authority, EncodedString path)
         {
             Authority = authority;
             Path = path;
         }
     }
 
-    public UriComponentParts Parse(EncodedString literal)
+    protected class AuthorityPart
     {
-        return Parse(literal.ToEncodedString());
+        public EncodedString? UserInfo { get; }
+        public EncodedString Host { get; }
+        public int? Port { get; }
+
+        public AuthorityPart(EncodedString? userInfo, EncodedString host, int? port)
+        {
+            UserInfo = userInfo;
+            Host = host;
+            Port = port;
+        }
     }
 
     public UriComponentParts Parse(string literal)
+    {
+        return Parse(EncodedString.FromEncoded(literal));
+    }
+
+    public UriComponentParts Parse(EncodedString? literal)
     {
         if (literal is null)
             throw new ArgumentNullException(nameof(literal));
@@ -33,42 +50,56 @@ public class UriParser
         var remainingPartStart = 0;
         var remainingPartEnd = literal.Length; // last character + 1
 
-        var scheme = ExtractScheme(literal, ref remainingPartStart);
+        var scheme = ExtractScheme(literal, ref remainingPartStart)?.Decode();
         var fragment = ExtractFragment(literal, remainingPartStart, ref remainingPartEnd);
         var query = ExtractQuery(literal, remainingPartStart, ref remainingPartEnd);
         var hierPart = ExtractHierPart(literal, remainingPartStart, remainingPartEnd);
         var authorityAndPath = ParseHierPart(hierPart);
         var segments = ParsePath(authorityAndPath.Path);
 
-        return new UriComponentParts(scheme,
-            EncodedString.FromEncoded(hierPart)!, authorityAndPath.Authority, EncodedString.FromEncoded(authorityAndPath.Path)!, segments,
-            EncodedString.FromEncoded(query), EncodedString.FromEncoded(fragment));
+        var authority = authorityAndPath.Authority;
+        var decodedAuthority = DecodeHost(authorityAndPath.Authority);
+        return new UriComponentParts(scheme, hierPart, authority, decodedAuthority, authorityAndPath.Path, segments, query, fragment);
     }
 
-    protected virtual IEnumerable<string> ParsePath(string path)
+    protected virtual string? DecodeHost(EncodedString? host)
     {
-        return path.Split('/').Select(s => EncodedString.FromEncoded(s)!.Decode());
+        if (host is null)
+            return null;
+        return IdnMapping.GetUnicode(host.Decode());
     }
 
-    protected virtual AuthorityAndPath ParseHierPart(string hierPart)
+    protected virtual IEnumerable<string> ParsePath(EncodedString path)
+    {
+        return path.Split('/').Select(s => s.Decode());
+    }
+
+    protected virtual AuthorityAndPathPart ParseHierPart(EncodedString hierPart)
     {
         if (!hierPart.StartsWith("//"))
             return new(null, hierPart);
         var remainingPartStart = 2;
-        var authority = ExtractBeginPart(hierPart, '/', ref remainingPartStart);
-        var path = ExtractMiddlePart(hierPart, remainingPartStart - 1, hierPart.Length);
+        var remainingPartEnd = hierPart.Length;
+        var path = ExtractEndPart(hierPart, '/', remainingPartStart, ref remainingPartEnd, keepDelimiter: true) 
+                   ?? EncodedString.Empty; // path can be empty, but not null
+        var authority = ExtractMiddlePart(hierPart, remainingPartStart, remainingPartEnd);
         return new(authority, path);
     }
 
-    protected virtual string? ExtractScheme(string literal, ref int remainingPartStart) => ExtractBeginPart(literal, ':', ref remainingPartStart, IsScheme);
+    protected virtual AuthorityPart ParseAuthority(string authority)
+    {
+        throw new NotImplementedException();
+    }
 
-    protected virtual string ExtractHierPart(string literal, int remainingPartStart, int remainingPartEnd) => ExtractMiddlePart(literal, remainingPartStart, remainingPartEnd);
+    protected virtual EncodedString? ExtractScheme(EncodedString literal, ref int remainingPartStart) => ExtractBeginPart(literal, ':', ref remainingPartStart, IsScheme);
 
-    protected virtual string? ExtractQuery(string literal, int remainingPartStart, ref int remainingPartEnd) => ExtractEndPart(literal, '?', remainingPartStart, ref remainingPartEnd);
+    protected virtual EncodedString ExtractHierPart(EncodedString literal, int remainingPartStart, int remainingPartEnd) => ExtractMiddlePart(literal, remainingPartStart, remainingPartEnd);
 
-    protected virtual string? ExtractFragment(string literal, int remainingPartStart, ref int remainingPartEnd) => ExtractEndPart(literal, '#', remainingPartStart, ref remainingPartEnd);
+    protected virtual EncodedString? ExtractQuery(EncodedString literal, int remainingPartStart, ref int remainingPartEnd) => ExtractEndPart(literal, '?', remainingPartStart, ref remainingPartEnd);
 
-    protected virtual string? ExtractBeginPart(string literal, char delimiter, ref int remainingPartStart, IsValidCharacterDelegate? isValidCharacter = null)
+    protected virtual EncodedString? ExtractFragment(EncodedString literal, int remainingPartStart, ref int remainingPartEnd) => ExtractEndPart(literal, '#', remainingPartStart, ref remainingPartEnd);
+
+    protected virtual EncodedString? ExtractBeginPart(EncodedString literal, char delimiter, ref int remainingPartStart, IsValidCharacterDelegate? isValidCharacter = null)
     {
         var index = literal.IndexOf(delimiter, isValidCharacter, remainingPartStart);
         if (!index.HasValue)
@@ -78,17 +109,19 @@ public class UriParser
         return part;
     }
 
-    protected virtual string ExtractMiddlePart(string literal, int remainingPartStart, int remainingPartEnd)
+    protected virtual EncodedString ExtractMiddlePart(EncodedString literal, int remainingPartStart, int remainingPartEnd)
     {
         return literal.Substring(remainingPartStart, remainingPartEnd - remainingPartStart);
     }
 
-    protected virtual string? ExtractEndPart(string literal, char delimiter, int remainingPartStart, ref int remainingPartEnd, IsValidCharacterDelegate? isValidCharacter = null)
+    protected virtual EncodedString? ExtractEndPart(EncodedString literal, char delimiter, int remainingPartStart, ref int remainingPartEnd,
+        IsValidCharacterDelegate? isValidCharacter = null, bool keepDelimiter = false)
     {
         var index = literal.IndexOf(delimiter, isValidCharacter, remainingPartStart, remainingPartEnd - remainingPartStart);
         if (!index.HasValue)
             return null;
-        var part = literal.Substring(index.Value + 1, remainingPartEnd - index.Value - 1);
+        var offset = keepDelimiter ? 0 : 1;
+        var part = literal.Substring(index.Value + offset, remainingPartEnd - index.Value - offset);
         remainingPartEnd = index.Value;
         return part;
     }
