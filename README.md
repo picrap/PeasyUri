@@ -24,6 +24,7 @@ Currently, you don’t.
 
 - [x] Authority decoder
 - [x] Work on `EncodedString` instead of `string`
+- [ ] User info splitter
 - [ ] Host name decoder
 - [ ] Create `PeasyUri` class (or keep it as `PeasyUri.Uri` if API is the same?)
 - [ ] HTTP specific query decoding
