@@ -12,8 +12,21 @@ public class UriParserTests
         var parts = UriParser.Default.Parse("foo://example.com:8042/over/there?name=ferret#nose");
         Assert.IsTrue(parts.Scheme == "foo");
         Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
+        Assert.IsTrue(parts.DecodedHost == "example.com");
+        Assert.IsTrue(parts.Port == 8042);
         Assert.IsTrue(parts.Query == "name=ferret");
         Assert.IsTrue(parts.Fragment == "nose");
+    }
+
+    [Test]
+    public void UserInfoUri()
+    {
+        var parts = UriParser.Default.Parse("foo://bob:doe@example.com:8042");
+        Assert.IsTrue(parts.Scheme == "foo");
+        Assert.IsTrue(parts.DecodedHost == "example.com");
+        Assert.IsTrue(parts.Port == 8042);
+        Assert.IsTrue(parts.DecodedUserInfo?.UserName == "bob");
+        Assert.IsTrue(parts.DecodedUserInfo?.Password == "doe");
     }
 
     [Test]

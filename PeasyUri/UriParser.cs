@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
+using System.Security;
 using PeasyUri.Components;
 using PeasyUri.Utility;
 
@@ -41,14 +43,13 @@ public class UriParser
 
     public UriComponentParts Parse(string literal)
     {
-        return Parse(EncodedString.FromEncoded(literal));
-    }
-
-    public UriComponentParts Parse(EncodedString? literal)
-    {
         if (literal is null)
             throw new ArgumentNullException(nameof(literal));
+        return Parse(EncodedString.FromEncoded(literal)!);
+    }
 
+    public UriComponentParts Parse(EncodedString literal)
+    {
         var remainingPartStart = 0;
         var remainingPartEnd = literal.Length; // last character + 1
 
@@ -60,8 +61,9 @@ public class UriParser
         var segments = ParsePath(authorityAndPath.Path);
         var authority = ParseAuthority(authorityAndPath.Authority);
         var decodedHost = DecodeHost(authority?.Host);
+        var userInfo = ParseUserInfo(authority?.UserInfo);
 
-        return new UriComponentParts(scheme, hierPart, authorityAndPath.Authority, authority?.UserInfo, authority?.Host, decodedHost, authority?.Port,
+        return new UriComponentParts(scheme, hierPart, authorityAndPath.Authority, authority?.UserInfo, userInfo, authority?.Host, decodedHost, authority?.Port,
             authorityAndPath.Path, segments, query, fragment);
     }
 
@@ -81,11 +83,14 @@ public class UriParser
     {
         if (!hierPart.StartsWith("//"))
             return new(null, hierPart);
+
         var remainingPartStart = 2;
         var remainingPartEnd = hierPart.Length;
+
         var path = ExtractEndPart(hierPart, '/', remainingPartStart, ref remainingPartEnd, keepDelimiter: true)
                    ?? EncodedString.Empty; // path can be empty, but not null
         var authority = ExtractMiddlePart(hierPart, remainingPartStart, remainingPartEnd);
+
         return new(authority, path);
     }
 
@@ -96,12 +101,28 @@ public class UriParser
 
         var remainingPartStart = 0;
         var remainingPartEnd = authority.Length;
+
         var userInfo = ExtractBeginPart(authority, '@', ref remainingPartStart);
         var literalPort = ExtractEndPart(authority, ':', remainingPartStart, ref remainingPartEnd, (c, _) => c.IsDigit());
         var port = literalPort is null ? (int?)null : int.Parse(literalPort.Decode(), CultureInfo.InvariantCulture);
         var host = ExtractMiddlePart(authority, remainingPartStart, remainingPartEnd);
 
         return new(userInfo, host, port);
+    }
+
+    protected virtual NetworkCredential? ParseUserInfo(EncodedString? userInfo)
+    {
+        if (userInfo is null)
+            return null;
+
+        var remainingPartStart = 0;
+        var remainingPartEnd = userInfo.Length;
+
+        var password = ExtractEndPart(userInfo, ':', remainingPartStart, ref remainingPartEnd);
+        if (password is null)
+            return new NetworkCredential(userInfo.Decode(), (string)null);
+        var userName = ExtractMiddlePart(userInfo, remainingPartStart, remainingPartEnd);
+        return new NetworkCredential(userName.Decode(), password.Decode());
     }
 
     protected virtual EncodedString? ExtractScheme(EncodedString literal, ref int remainingPartStart) => ExtractBeginPart(literal, ':', ref remainingPartStart, IsScheme);
@@ -130,11 +151,20 @@ public class UriParser
     protected virtual EncodedString? ExtractEndPart(EncodedString literal, char delimiter, int remainingPartStart, ref int remainingPartEnd,
         IsValidCharacterDelegate? isValidCharacter = null, bool keepDelimiter = false)
     {
-        var index = literal.IndexOf(delimiter, isValidCharacter, remainingPartStart, remainingPartEnd - remainingPartStart);
+        var index = literal.IndexOf(delimiter, null, remainingPartStart, remainingPartEnd - remainingPartStart);
         if (!index.HasValue)
             return null;
         var offset = keepDelimiter ? 0 : 1;
         var part = literal.Substring(index.Value + offset, remainingPartEnd - index.Value - offset);
+        if (isValidCharacter is not null)
+        {
+            var encodedPart = part.ToEncodedString();
+            for (int testIndex = 0; testIndex < part.Length; testIndex++)
+            {
+                if (!isValidCharacter(encodedPart[testIndex], testIndex))
+                    return null;
+            }
+        }
         remainingPartEnd = index.Value;
         return part;
     }

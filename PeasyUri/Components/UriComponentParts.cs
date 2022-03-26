@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net;
 
 namespace PeasyUri.Components;
 
@@ -10,6 +11,7 @@ public record UriComponentParts
     public EncodedString HierPart { get; }
     public EncodedString? Authority { get; }
     public EncodedString? UserInfo { get; }
+    public NetworkCredential? DecodedUserInfo { get; }
     public EncodedString? Host { get; }
     public string? DecodedHost { get; }
     public int? Port { get; }
@@ -18,14 +20,16 @@ public record UriComponentParts
     public EncodedString? Query { get; }
     public EncodedString? Fragment { get; }
 
-    public UriComponentParts(string? scheme, EncodedString hierPart, EncodedString? authority, 
-        EncodedString? userInfo, EncodedString? host, string? decodedHost, int? port, 
+    public UriComponentParts(string? scheme, EncodedString hierPart, EncodedString? authority,
+        EncodedString? userInfo, NetworkCredential? decodedUserInfo, EncodedString? host, string? decodedHost,
+        int? port,
         EncodedString path, IEnumerable<string> segments, EncodedString? query, EncodedString? fragment)
     {
         Scheme = scheme;
         HierPart = hierPart;
         Authority = authority;
         UserInfo = userInfo;
+        DecodedUserInfo = decodedUserInfo;
         Host = host;
         DecodedHost = decodedHost;
         Port = port;
