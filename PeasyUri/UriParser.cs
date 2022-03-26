@@ -9,7 +9,9 @@ namespace PeasyUri;
 
 public class UriParser
 {
-    protected static IdnMapping IdnMapping { get; } = new IdnMapping();
+    public static readonly UriParser Default = new();
+
+    protected static IdnMapping IdnMapping { get; } = new();
 
     protected class AuthorityAndPathPart
     {
@@ -58,6 +60,7 @@ public class UriParser
         var segments = ParsePath(authorityAndPath.Path);
         var authority = ParseAuthority(authorityAndPath.Authority);
         var decodedHost = DecodeHost(authority?.Host);
+
         return new UriComponentParts(scheme, hierPart, authorityAndPath.Authority, authority?.UserInfo, authority?.Host, decodedHost, authority?.Port,
             authorityAndPath.Path, segments, query, fragment);
     }
@@ -90,12 +93,14 @@ public class UriParser
     {
         if (authority is null)
             return null;
+
         var remainingPartStart = 0;
         var remainingPartEnd = authority.Length;
         var userInfo = ExtractBeginPart(authority, '@', ref remainingPartStart);
         var literalPort = ExtractEndPart(authority, ':', remainingPartStart, ref remainingPartEnd, (c, _) => c.IsDigit());
         var port = literalPort is null ? (int?)null : int.Parse(literalPort.Decode(), CultureInfo.InvariantCulture);
         var host = ExtractMiddlePart(authority, remainingPartStart, remainingPartEnd);
+
         return new(userInfo, host, port);
     }
 
