@@ -9,19 +9,26 @@ public record UriComponentParts
     public string? Scheme { get; }
     public EncodedString HierPart { get; }
     public EncodedString? Authority { get; }
-    public string? DecodedAuthority { get; }
+    public EncodedString? UserInfo { get; }
+    public EncodedString? Host { get; }
+    public string? DecodedHost { get; }
+    public int? Port { get; }
     public EncodedString Path { get; }
     public ICollection<string> Segments { get; }
     public EncodedString? Query { get; }
     public EncodedString? Fragment { get; }
 
-    public UriComponentParts(string? scheme, EncodedString hierPart, EncodedString? authority, string? decodedAuthority, EncodedString path, IEnumerable<string> segments,
-        EncodedString? query, EncodedString? fragment)
+    public UriComponentParts(string? scheme, EncodedString hierPart, EncodedString? authority, 
+        EncodedString? userInfo, EncodedString? host, string? decodedHost, int? port, 
+        EncodedString path, IEnumerable<string> segments, EncodedString? query, EncodedString? fragment)
     {
         Scheme = scheme;
         HierPart = hierPart;
         Authority = authority;
-        DecodedAuthority = decodedAuthority;
+        UserInfo = userInfo;
+        Host = host;
+        DecodedHost = decodedHost;
+        Port = port;
         Path = path;
         Segments = new ReadOnlyCollection<string>(segments.ToArray());
         Query = query;

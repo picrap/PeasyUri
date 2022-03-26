@@ -56,10 +56,10 @@ public class UriParser
         var hierPart = ExtractHierPart(literal, remainingPartStart, remainingPartEnd);
         var authorityAndPath = ParseHierPart(hierPart);
         var segments = ParsePath(authorityAndPath.Path);
-
-        var authority = authorityAndPath.Authority;
-        var decodedAuthority = DecodeHost(authorityAndPath.Authority);
-        return new UriComponentParts(scheme, hierPart, authority, decodedAuthority, authorityAndPath.Path, segments, query, fragment);
+        var authority = ParseAuthority(authorityAndPath.Authority);
+        var decodedHost = DecodeHost(authority?.Host);
+        return new UriComponentParts(scheme, hierPart, authorityAndPath.Authority, authority?.UserInfo, authority?.Host, decodedHost, authority?.Port,
+            authorityAndPath.Path, segments, query, fragment);
     }
 
     protected virtual string? DecodeHost(EncodedString? host)
@@ -80,15 +80,23 @@ public class UriParser
             return new(null, hierPart);
         var remainingPartStart = 2;
         var remainingPartEnd = hierPart.Length;
-        var path = ExtractEndPart(hierPart, '/', remainingPartStart, ref remainingPartEnd, keepDelimiter: true) 
+        var path = ExtractEndPart(hierPart, '/', remainingPartStart, ref remainingPartEnd, keepDelimiter: true)
                    ?? EncodedString.Empty; // path can be empty, but not null
         var authority = ExtractMiddlePart(hierPart, remainingPartStart, remainingPartEnd);
         return new(authority, path);
     }
 
-    protected virtual AuthorityPart ParseAuthority(string authority)
+    protected virtual AuthorityPart? ParseAuthority(EncodedString? authority)
     {
-        throw new NotImplementedException();
+        if (authority is null)
+            return null;
+        var remainingPartStart = 0;
+        var remainingPartEnd = authority.Length;
+        var userInfo = ExtractBeginPart(authority, '@', ref remainingPartStart);
+        var literalPort = ExtractEndPart(authority, ':', remainingPartStart, ref remainingPartEnd, (c, _) => c.IsDigit());
+        var port = literalPort is null ? (int?)null : int.Parse(literalPort.Decode(), CultureInfo.InvariantCulture);
+        var host = ExtractMiddlePart(authority, remainingPartStart, remainingPartEnd);
+        return new(userInfo, host, port);
     }
 
     protected virtual EncodedString? ExtractScheme(EncodedString literal, ref int remainingPartStart) => ExtractBeginPart(literal, ':', ref remainingPartStart, IsScheme);

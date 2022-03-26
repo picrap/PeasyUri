@@ -98,6 +98,6 @@ public class UriParserTests
     {
         var uriParser = new UriParser();
         var parts = uriParser.Parse("foo://xn--bpo-bma");
-        Assert.IsTrue(parts.DecodedAuthority == "bépo");
+        Assert.IsTrue(parts.DecodedHost == "bépo");
     }
 }

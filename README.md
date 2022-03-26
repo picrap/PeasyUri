@@ -22,7 +22,7 @@ Currently, you don’t.
 
 (a package will be released after that)
 
-- [ ] Authority decoder
+- [x] Authority decoder
 - [x] Work on `EncodedString` instead of `string`
 - [ ] Host name decoder
 - [ ] Create `PeasyUri` class (or keep it as `PeasyUri.Uri` if API is the same?)
