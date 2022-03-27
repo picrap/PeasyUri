@@ -40,14 +40,14 @@ public class UriParser
         }
     }
 
-    public UriComponentParts Parse(string literal)
+    public UriComponentParts? TryParse(string literal)
     {
         if (literal is null)
             throw new ArgumentNullException(nameof(literal));
-        return Parse(EncodedString.FromEncoded(literal)!);
+        return TryParse(EncodedString.FromEncoded(literal)!);
     }
 
-    public UriComponentParts Parse(EncodedString literal)
+    public UriComponentParts? TryParse(EncodedString literal)
     {
         var remainingPartStart = 0;
         var remainingPartEnd = literal.Length; // last character + 1

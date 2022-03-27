@@ -22,8 +22,7 @@ public record UriComponentParts
 
     public UriComponentParts(string? scheme, EncodedString hierPart, EncodedString? authority,
         EncodedString? userInfo, NetworkCredential? decodedUserInfo, EncodedString? host, string? decodedHost,
-        int? port,
-        EncodedString path, IEnumerable<string> segments, EncodedString? query, EncodedString? fragment)
+        int? port, EncodedString path, IEnumerable<string> segments, EncodedString? query, EncodedString? fragment)
     {
         Scheme = scheme;
         HierPart = hierPart;

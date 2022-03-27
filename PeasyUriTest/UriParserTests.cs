@@ -1,5 +1,6 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using PeasyUri;
+#pragma warning disable CS8602
 
 namespace PeasyUriTest;
 
@@ -9,7 +10,8 @@ public class UriParserTests
     [Test]
     public void FullUri()
     {
-        var parts = UriParser.Default.Parse("foo://example.com:8042/over/there?name=ferret#nose");
+        var parts = UriParser.Default.TryParse("foo://example.com:8042/over/there?name=ferret#nose");
+        Assert.IsNotNull(parts);
         Assert.IsTrue(parts.Scheme == "foo");
         Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
         Assert.IsTrue(parts.DecodedHost == "example.com");
@@ -21,7 +23,8 @@ public class UriParserTests
     [Test]
     public void UserInfoUri()
     {
-        var parts = UriParser.Default.Parse("foo://bob:doe@example.com:8042");
+        var parts = UriParser.Default.TryParse("foo://bob:doe@example.com:8042");
+        Assert.IsNotNull(parts);
         Assert.IsTrue(parts.Scheme == "foo");
         Assert.IsTrue(parts.DecodedHost == "example.com");
         Assert.IsTrue(parts.Port == 8042);
@@ -32,7 +35,8 @@ public class UriParserTests
     [Test]
     public void RelativeUri()
     {
-        var parts = UriParser.Default.Parse("//example.com:8042/over/there?name=ferret#nose");
+        var parts = UriParser.Default.TryParse("//example.com:8042/over/there?name=ferret#nose");
+        Assert.IsNotNull(parts);
         Assert.IsNull(null, parts.Scheme);
         Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
         Assert.IsTrue(parts.Query == "name=ferret");
@@ -42,7 +46,8 @@ public class UriParserTests
     [Test]
     public void UriNoFragment()
     {
-        var parts = UriParser.Default.Parse("foo://example.com:8042/over/there?name=ferret");
+        var parts = UriParser.Default.TryParse("foo://example.com:8042/over/there?name=ferret");
+        Assert.IsNotNull(parts);
         Assert.IsTrue(parts.Scheme == "foo");
         Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
         Assert.IsTrue(parts.Query == "name=ferret");
@@ -52,7 +57,7 @@ public class UriParserTests
     [Test]
     public void UriNoQuery()
     {
-        var parts = UriParser.Default.Parse("foo://example.com:8042/over/there#nose");
+        var parts = UriParser.Default.TryParse("foo://example.com:8042/over/there#nose");
         Assert.IsTrue(parts.Scheme == "foo");
         Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
         Assert.IsNull(parts.Query);
@@ -62,7 +67,8 @@ public class UriParserTests
     [Test]
     public void UriPathOnly()
     {
-        var parts = UriParser.Default.Parse("foo://example.com:8042/over/there");
+        var parts = UriParser.Default.TryParse("foo://example.com:8042/over/there");
+        Assert.IsNotNull(parts);
         Assert.IsTrue(parts.Scheme == "foo");
         Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
         Assert.IsNull(parts.Query);
@@ -72,7 +78,8 @@ public class UriParserTests
     [Test]
     public void UriNoPath()
     {
-        var parts = UriParser.Default.Parse("foo://example.com:8042");
+        var parts = UriParser.Default.TryParse("foo://example.com:8042");
+        Assert.IsNotNull(parts);
         Assert.IsTrue(parts.Scheme == "foo");
         Assert.IsTrue(parts.HierPart == "//example.com:8042");
         Assert.IsTrue(parts.Authority == "example.com:8042");
@@ -83,7 +90,8 @@ public class UriParserTests
     [Test]
     public void Urn()
     {
-        var parts = UriParser.Default.Parse("urn:example:animal:ferret:nose");
+        var parts = UriParser.Default.TryParse("urn:example:animal:ferret:nose");
+        Assert.IsNotNull(parts);
         Assert.IsTrue("urn" == parts.Scheme);
         Assert.IsTrue(parts.HierPart == "example:animal:ferret:nose");
         Assert.IsNull(parts.Query);
@@ -93,7 +101,7 @@ public class UriParserTests
     [Test]
     public void FullHierPart()
     {
-        var parts = UriParser.Default.Parse("//example.com:8042/over/there");
+        var parts = UriParser.Default.TryParse("//example.com:8042/over/there");
         Assert.IsTrue(parts.Authority == "example.com:8042");
         Assert.IsTrue(parts.Path == "/over/there");
     }
@@ -101,7 +109,16 @@ public class UriParserTests
     [Test]
     public void DecodeAuthority()
     {
-        var parts = UriParser.Default.Parse("foo://xn--bpo-bma");
-        Assert.IsTrue(parts.DecodedHost == "b�po");
+        var parts = UriParser.Default.TryParse("foo://xn--bpo-bma");
+        Assert.IsNotNull(parts);
+        Assert.IsTrue(parts.DecodedHost == "bépo");
+    }
+
+    [Test]
+    public void EncodedUriTest()
+    {
+        var literalUri= "foo://høst:1234/oṽ%c4%93r?name=ƒer%c5%99e%74#nŏ%c5%9fe";
+        var uri = new System. Uri(literalUri);
+        var parts = UriParser.Default.TryParse(literalUri)!;
     }
 }

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace PeasyUri.Utility;
+﻿namespace PeasyUri.Utility;
 
 public delegate bool IsValidCharacterDelegate(char c, int index);
 

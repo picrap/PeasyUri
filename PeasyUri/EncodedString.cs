@@ -8,35 +8,49 @@ using PeasyUri.Utility;
 
 namespace PeasyUri;
 
-[DebuggerDisplay("{_encodedString}")]
+/// <summary>
+/// An encoded string is an octet representation for a string
+/// It keeps escaped chars as escaped, to make a semantic difference between / and %2F
+/// </summary>
+[DebuggerDisplay("{DebugLiteral}")]
 public class EncodedString : IEquatable<EncodedString>, IEnumerable<byte>
 {
-    public static EncodedString Empty = FromEncoded("")!;
+    public static readonly EncodedString Empty = FromEncoded("")!;
 
-    private static readonly Encoding Encoding = Encoding.UTF8;
+    private static Encoding? _encoding;
+    private static Encoding Encoding => _encoding ??= Encoding.UTF8;
 
-    private readonly string _encodedString;
+    private readonly byte[] _bytes;
 
-    public int Length => _encodedString.Length;
+    private string DebugLiteral => Decode();
+
+    public int Length => _bytes.Length;
 
     private EncodedString(string encoded)
     {
-        _encodedString = encoded ?? throw new ArgumentNullException(nameof(encoded));
+        if (encoded is null)
+            throw new ArgumentNullException(nameof(encoded));
+        _bytes = ParseString(encoded).ToArray();
+    }
+
+    private EncodedString(IEnumerable<byte> bytes)
+    {
+        _bytes = bytes.ToArray();
     }
 
     public static EncodedString? FromEncoded(byte[]? encoded) => encoded is null ? null : new(Encoding.ASCII.GetString(encoded));
     public static EncodedString? FromEncoded(string? encoded) => encoded is null ? null : new(encoded);
 
-    public string ToEncodedString() => _encodedString;
+    public string ToEncodedString() => Encoding.ASCII.GetString(_bytes);
 
-    public string Decode()
-    {
-        return Encoding.GetString(DecodeBytes().ToArray());
-    }
+    public string Decode() => Decode(_bytes);
 
-    private IEnumerable<byte> DecodeBytes()
+    private static string Decode(byte[] encodedBytes) => Encoding.GetString(DecodeBytes(encodedBytes).ToArray());
+
+    private IEnumerable<byte> DecodeBytes() => DecodeBytes(_bytes);
+
+    private static IEnumerable<byte> DecodeBytes(byte[] encodedBytes)
     {
-        var encodedBytes = Encoding.GetBytes(_encodedString);
         for (int byteIndex = 0; byteIndex < encodedBytes.Length; byteIndex++)
         {
             var c = encodedBytes[byteIndex];
@@ -46,15 +60,57 @@ public class EncodedString : IEquatable<EncodedString>, IEnumerable<byte>
                 continue;
             }
 
-            if (byteIndex >= encodedBytes.Length - 2)
-                throw new FormatException($"Not enough octets in string after %-sign at {byteIndex}");
-
-            var ec = GetHexDigit(encodedBytes[byteIndex + 1]) * 16 + GetHexDigit(encodedBytes[byteIndex + 2]);
-            if (!ec.HasValue)
-                throw new FormatException($"Expected two hexadecimal octets after %-sign at index {byteIndex}");
-            yield return (byte)ec.Value;
-            byteIndex += 2;
+            var ec = GetPercentEncoded(encodedBytes, ref byteIndex);
+            yield return ec;
         }
+    }
+
+    private static IEnumerable<byte> ParseString(string encodedString)
+    {
+        var bytes = new List<byte>();
+        var encodedBytes = Encoding.GetBytes(encodedString);
+        for (int byteIndex = 0; byteIndex < encodedBytes.Length; byteIndex++)
+        {
+            var c = encodedBytes[byteIndex];
+            if (c != '%')
+            {
+                if (((char)c).Is(CharFlags.Reserved | CharFlags.Unreserved))
+                    bytes.Add(c);
+                else
+                    GetAsPercentEncoding(c, bytes);
+                continue;
+            }
+
+            var ec = GetPercentEncoded(encodedBytes, ref byteIndex);
+            if (((char)ec).IsUnreserved())
+                bytes.Add(ec);
+            else
+                GetAsPercentEncoding(ec, bytes);
+        }
+
+        return bytes;
+    }
+
+    private static byte GetPercentEncoded(byte[] encodedBytes, ref int byteIndex)
+    {
+        if (byteIndex >= encodedBytes.Length - 2)
+            throw new FormatException($"Not enough octets in string after %-sign at {byteIndex}");
+
+        var ec = GetHexDigit(encodedBytes[byteIndex + 1]) * 16 + GetHexDigit(encodedBytes[byteIndex + 2]);
+        if (!ec.HasValue)
+            throw new FormatException($"Expected two hexadecimal octets after %-sign at index {byteIndex}");
+        byteIndex += 2;
+        return (byte)ec.Value;
+    }
+
+    private static void GetAsPercentEncoding(byte c, List<byte> bytes)
+    {
+        bytes.AddRange(PercentEncode(c).Select(e => (byte)e));
+    }
+
+    private static string PercentEncode(byte b)
+    {
+        return $"%{b:X2}";
     }
 
     private static int? GetHexDigit(byte b)
@@ -91,7 +147,7 @@ public class EncodedString : IEquatable<EncodedString>, IEnumerable<byte>
     {
         if (other is null)
             return false;
-        return DecodeBytes().SequenceEqual(other.DecodeBytes());
+        return _bytes.SequenceEqual(_bytes);
     }
 
     public override int GetHashCode()
@@ -120,31 +176,53 @@ public class EncodedString : IEquatable<EncodedString>, IEnumerable<byte>
 
     public static bool operator !=(EncodedString? a, string? b) => !(a == b);
 
-    public EncodedString Substring(int start, int offset) => new(_encodedString.Substring(start, offset));
+    public EncodedString Substring(int start, int offset) => new(_bytes.Skip(start).Take(offset));
 
-    public IEnumerable<EncodedString> Split(char c) => _encodedString.Split(c).Select(FromEncoded)!;
+    public IEnumerable<EncodedString> Split(char c)
+    {
+        var lastIndex = 0;
+        foreach (var index in IndexesOf(c))
+        {
+            yield return new(_bytes.Skip(lastIndex).Take(index - lastIndex));
+            lastIndex = index + 1;
+        }
+
+        yield return new(_bytes.Skip(lastIndex));
+    }
 
     public bool Contains(char c) => IndexOf(c).HasValue;
 
+    private IEnumerable<int> IndexesOf(char c, int first = 0, int? count = null)
+    {
+        var actualCount = count ?? _bytes.Length - first;
+        for (int index = first; actualCount > 0; actualCount--, index++)
+            if (_bytes[index] == c)
+                yield return index;
+    }
+
     public int? IndexOf(char c, int first = 0, int? count = null)
     {
-        return _encodedString.IndexOf(c, first, count);
+        return IndexesOf(c, first, count).Cast<int?>().FirstOrDefault();
     }
 
     public int? LastIndexOf(char c, int first = 0, int? count = null)
     {
-        return _encodedString.LastIndexOf(c, first, count);
+        return IndexesOf(c, first, count).Cast<int?>().LastOrDefault();
     }
 
     public bool StartsWith(string s)
     {
-        return IndexOf(s) == 0;
+        return ContainsAt(s, 0);
     }
 
-    public int? IndexOf(string s)
+    private bool ContainsAt(string s, int offset)
     {
-        var indexOf = _encodedString.IndexOf(s, StringComparison.InvariantCulture);
-        return indexOf < 0 ? null : indexOf;
+        if (s.Length + offset > _bytes.Length)
+            return false;
+        for (int i = 0; i < s.Length; i++)
+            if (_bytes[offset + i] != s[i])
+                return false;
+        return true;
     }
 
     public bool IsValid(IsValidCharacterDelegate? isValidCharacterDelegate)
@@ -153,9 +231,9 @@ public class EncodedString : IEquatable<EncodedString>, IEnumerable<byte>
             return true;
 
         var index = 0;
-        foreach (var c in _encodedString)
+        foreach (var c in _bytes)
         {
-            if (!isValidCharacterDelegate(c, index++))
+            if (!isValidCharacterDelegate((char)c, index++))
                 return false;
         }
         return true;
