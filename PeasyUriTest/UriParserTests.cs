@@ -115,11 +115,12 @@ public class UriParserTests
     }
 
     [Test]
-    [Ignore("Not a test yet")]
     public void EncodedUriTest()
     {
-        var literalUri= "foo://høst:1234/oṽ%c4%93r?name=ƒer%c5%99e%74#nŏ%c5%9fe";
-        var uri = new System. Uri(literalUri);
-        var parts = UriParser.Default.TryParse(literalUri)!;
+        var literalUri = "foo://hé:bé@høst:1234/oṽ%c4%93r?name=ƒer%c5%99e%74#nŏ%c5%9fe";
+        var uri = new System.Uri(literalUri);
+        var peasyUri = new Uri(EncodedString.FromEncoded(literalUri)!);
+        var d = peasyUri.Encode();
+        var de = d.ToEncodedString();
     }
 }

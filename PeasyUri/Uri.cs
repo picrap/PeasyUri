@@ -1,10 +1,40 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Net;
 using PeasyUri.Components;
 
 namespace PeasyUri;
 
 public class Uri
 {
+    public EncodedString AbsolutePath { get; }
+
+    public NetworkCredential? DecodedUserInfo { get; }
+
+    public EncodedString? UserInfo { get; }
+
+    public ICollection<string> Segments { get; }
+
+    public string? Scheme { get; }
+
+    public int? Port { get; }
+
+    public EncodedString OriginalString { get; }
+
+    public string LocalPath { get; }
+
+    public string? IdnHost { get; }
+
+    public string? DnsSafeHost { get; }
+
+    public EncodedString? Authority { get; }
+
+    public EncodedString? Query { get; }
+
+    public EncodedString? Fragment { get; }
+
     public static bool TryParse(string? rawString, out Uri? uri) => TryParse(EncodedString.FromEncoded(rawString), out uri);
 
     /// <summary>
@@ -28,18 +58,50 @@ public class Uri
             return false;
         }
 
-        uri = new(uriComponents);
+        uri = new(encodedString, uriComponents);
         return true;
     }
 
     public Uri(EncodedString encodedString)
-    : this(UriParser.Default.TryParse(encodedString) ?? throw new UriFormatException($"Invalid Uri format: {encodedString.ToEncodedString()}"))
+    : this(encodedString, UriParser.Default.TryParse(encodedString) ?? throw new UriFormatException($"Invalid Uri format: {encodedString.ToEncodedString()}"))
     {
-
     }
 
-    private Uri(UriComponentParts parts)
+    public Uri(string encodedString)
+    : this(EncodedString.FromEncoded(encodedString)!, UriParser.Default.TryParse(encodedString) ?? throw new UriFormatException($"Invalid Uri format: {encodedString}"))
     {
+    }
 
+    private Uri(EncodedString encodedString, UriComponentParts parts)
+    {
+        OriginalString = encodedString;
+        AbsolutePath = parts.Path;
+        Authority = parts.Authority;
+        DnsSafeHost = parts.DecodedHost;
+        IdnHost = parts.DecodedHost is not null ? UriParser.IdnMapping.GetAscii(parts.DecodedHost) : null;
+        LocalPath = parts.Path.Decode();
+        Port = parts.Port;
+        Scheme = parts.Scheme;
+        Segments = new ReadOnlyCollection<string>(parts.Segments.ToList());
+        UserInfo = parts.UserInfo;
+        DecodedUserInfo = parts.DecodedUserInfo;
+        Query = parts.Query;
+        Fragment = parts.Fragment;
+    }
+
+    public EncodedString Encode()
+    {
+        var encodedString = EncodedString.Empty;
+        if (Scheme is not null)
+            encodedString += Scheme + ":";
+        // TODO: use IdnHost and cracked authority
+        if (Authority is not null)
+            encodedString += "//" + Authority;
+        encodedString += AbsolutePath;
+        if (Query is not null)
+            encodedString += "?" + Query;
+        if (Fragment is not null)
+            encodedString += "#" + Fragment;
+        return encodedString;
     }
 }

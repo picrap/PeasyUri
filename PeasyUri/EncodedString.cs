@@ -238,4 +238,19 @@ public class EncodedString : IEquatable<EncodedString>, IEnumerable<byte>
         }
         return true;
     }
+
+    public static EncodedString operator +(EncodedString a, EncodedString b)
+    {
+        return new EncodedString(a._bytes.Concat(b._bytes));
+    }
+
+    public static EncodedString operator +(EncodedString a, string b)
+    {
+        return new EncodedString(a._bytes.Concat(FromEncoded(b)!._bytes));
+    }
+
+    public static EncodedString operator +(string a, EncodedString b)
+    {
+        return new EncodedString(FromEncoded(a)!._bytes.Concat(b._bytes));
+    }
 }

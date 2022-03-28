@@ -12,7 +12,7 @@ public class UriParser
 {
     public static readonly UriParser Default = new();
 
-    protected static IdnMapping IdnMapping { get; } = new();
+    protected internal static IdnMapping IdnMapping { get; } = new();
 
     protected class AuthorityAndPathPart
     {
