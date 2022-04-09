@@ -59,18 +59,29 @@ public class UriParser
         var authorityAndPath = ParseHierPart(hierPart);
         var segments = ParsePath(authorityAndPath.Path);
         var authority = ParseAuthority(authorityAndPath.Authority);
-        var decodedHost = DecodeHost(authority?.Host);
+        var dnsSafeHost = GetDnsSafeHost(authority?.Host);
+        var decodedHost = GetIdnHost(dnsSafeHost);
         var userInfo = ParseUserInfo(authority?.UserInfo);
 
-        return new UriComponentParts(scheme, hierPart, authorityAndPath.Authority, authority?.UserInfo, userInfo, authority?.Host, decodedHost, authority?.Port,
+        return new UriComponentParts(scheme, hierPart, authorityAndPath.Authority, authority?.UserInfo, userInfo, authority?.Host, decodedHost, dnsSafeHost, authority?.Port,
             authorityAndPath.Path, segments, query, fragment);
     }
 
-    protected virtual string? DecodeHost(EncodedString? host)
+    protected virtual string? GetDnsSafeHost(EncodedString? host)
     {
         if (host is null)
             return null;
-        return IdnMapping.GetUnicode(host.Decode());
+        var decodedHost = host.Decode();
+        if (decodedHost.StartsWith("[") && decodedHost.EndsWith("]"))
+            return decodedHost.Substring(1, decodedHost.Length - 2);
+        return decodedHost;
+    }
+
+    protected virtual string? GetIdnHost(string? dnsSafeHost)
+    {
+        if (dnsSafeHost is null)
+            return null;
+        return IdnMapping.GetAscii(dnsSafeHost);
     }
 
     protected virtual IEnumerable<string> ParsePath(EncodedString path)
@@ -102,7 +113,7 @@ public class UriParser
         var remainingPartEnd = authority.Length;
 
         var userInfo = ExtractBeginPart(authority, '@', ref remainingPartStart);
-        var literalPort = ExtractEndPart(authority, ':', remainingPartStart, ref remainingPartEnd, (c, _) => c.IsDigit());
+        var literalPort = ExtractEndPart(authority, ':', remainingPartStart, ref remainingPartEnd, (c, _) => c.IsDigit(), lastDelimiter: true);
         var port = literalPort is null ? (int?)null : int.Parse(literalPort.Decode(), CultureInfo.InvariantCulture);
         var host = ExtractMiddlePart(authority, remainingPartStart, remainingPartEnd);
 

@@ -14,7 +14,7 @@ public class UriParserTests
         Assert.IsNotNull(parts);
         Assert.IsTrue(parts.Scheme == "foo");
         Assert.IsTrue(parts.HierPart == "//example.com:8042/over/there");
-        Assert.IsTrue(parts.DecodedHost == "example.com");
+        Assert.IsTrue(parts.IdnHost == "example.com");
         Assert.IsTrue(parts.Port == 8042);
         Assert.IsTrue(parts.Query == "name=ferret");
         Assert.IsTrue(parts.Fragment == "nose");
@@ -26,7 +26,7 @@ public class UriParserTests
         var parts = UriParser.Default.TryParse("foo://bob:doe@example.com:8042");
         Assert.IsNotNull(parts);
         Assert.IsTrue(parts.Scheme == "foo");
-        Assert.IsTrue(parts.DecodedHost == "example.com");
+        Assert.IsTrue(parts.IdnHost == "example.com");
         Assert.IsTrue(parts.Port == 8042);
         Assert.IsTrue(parts.DecodedUserInfo?.UserName == "bob");
         Assert.IsTrue(parts.DecodedUserInfo?.Password == "doe");
@@ -107,11 +107,21 @@ public class UriParserTests
     }
 
     [Test]
-    public void DecodeAuthority()
+    public void NoDecodeAuthority()
     {
         var parts = UriParser.Default.TryParse("foo://xn--bpo-bma");
+        var uri = new System.Uri("foo://xn--bpo-bma");
         Assert.IsNotNull(parts);
-        Assert.IsTrue(parts.DecodedHost == "bépo");
+        Assert.IsTrue(parts.IdnHost == "xn--bpo-bma");
+    }
+
+    [Test]
+    public void DecodeAuthority()
+    {
+        var parts = UriParser.Default.TryParse("foo://bépo");
+        var uri = new System.Uri("foo://bépo");
+        Assert.IsNotNull(parts);
+        Assert.IsTrue(parts.IdnHost == "xn--bpo-bma");
     }
 
     [Test]
@@ -122,5 +132,25 @@ public class UriParserTests
         var peasyUri = new Uri(EncodedString.FromEncoded(literalUri)!);
         var d = peasyUri.Encode();
         var de = d.ToEncodedString();
+    }
+
+    [Test]
+    public void IPv4HostPort()
+    {
+        var parts = UriParser.Default.TryParse("foo://host:1234");
+        Assert.IsNotNull(parts);
+        Assert.IsTrue(parts.IdnHost == "host");
+        Assert.IsTrue(parts.Port == 1234);
+    }
+
+    [Test]
+    public void IPv6HostPort()
+    {
+        var parts = UriParser.Default.TryParse("foo://[2a00::5678]:1234");
+        var uri = new System.Uri("foo://[2a00::5678]:1234");
+        Assert.IsNotNull(parts);
+        Assert.IsTrue(parts.IdnHost == "2a00::5678");
+        Assert.IsTrue(parts.DnsSafeHost == "2a00::5678");
+        Assert.IsTrue(parts.Port == 1234);
     }
 }

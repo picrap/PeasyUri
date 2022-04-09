@@ -77,8 +77,8 @@ public class Uri
         OriginalString = encodedString;
         AbsolutePath = parts.Path;
         Authority = parts.Authority;
-        DnsSafeHost = parts.DecodedHost;
-        IdnHost = parts.DecodedHost is not null ? UriParser.IdnMapping.GetAscii(parts.DecodedHost) : null;
+        DnsSafeHost = parts.DnsSafeHost;
+        IdnHost = parts.IdnHost;
         LocalPath = parts.Path.Decode();
         Port = parts.Port;
         Scheme = parts.Scheme;
