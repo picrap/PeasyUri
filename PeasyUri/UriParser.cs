@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using PeasyUri.Components;
 using PeasyUri.Utility;
 
 namespace PeasyUri;
@@ -40,14 +39,14 @@ public class UriParser
         }
     }
 
-    public UriComponentParts? TryParse(string literal)
+    public Uri? TryParse(string literal)
     {
         if (literal is null)
             throw new ArgumentNullException(nameof(literal));
         return TryParse(EncodedString.FromEncoded(literal)!);
     }
 
-    public UriComponentParts? TryParse(EncodedString literal)
+    public Uri? TryParse(EncodedString literal)
     {
         var remainingPartStart = 0;
         var remainingPartEnd = literal.Length; // last character + 1
@@ -63,8 +62,9 @@ public class UriParser
         var decodedHost = GetIdnHost(dnsSafeHost);
         var userInfo = ParseUserInfo(authority?.UserInfo);
 
-        return new UriComponentParts(scheme, hierPart, authorityAndPath.Authority, authority?.UserInfo, userInfo, authority?.Host, decodedHost, dnsSafeHost, authority?.Port,
-            authorityAndPath.Path, segments, query, fragment);
+        return new Uri(literal, scheme, hierPart, authorityAndPath.Authority, authority?.UserInfo, userInfo,
+            authority?.Host, decodedHost, dnsSafeHost, authority?.Port, authorityAndPath.Path, segments, query,
+            fragment);
     }
 
     protected virtual string? GetDnsSafeHost(EncodedString? host)

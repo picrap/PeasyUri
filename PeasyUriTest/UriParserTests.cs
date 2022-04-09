@@ -103,7 +103,7 @@ public class UriParserTests
     {
         var parts = UriParser.Default.TryParse("//example.com:8042/over/there");
         Assert.IsTrue(parts.Authority == "example.com:8042");
-        Assert.IsTrue(parts.Path == "/over/there");
+        Assert.IsTrue(parts.AbsolutePath == "/over/there");
     }
 
     [Test]

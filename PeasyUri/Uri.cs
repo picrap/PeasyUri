@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
-using PeasyUri.Components;
 
 namespace PeasyUri;
 
@@ -18,6 +17,7 @@ public class Uri
     public ICollection<string> Segments { get; }
 
     public string? Scheme { get; }
+    public EncodedString HierPart { get; }
 
     public int? Port { get; }
 
@@ -51,42 +51,43 @@ public class Uri
             return false;
         }
 
-        var uriComponents = UriParser.Default.TryParse(encodedString);
-        if (uriComponents is null)
-        {
-            uri = null;
-            return false;
-        }
-
-        uri = new(encodedString, uriComponents);
-        return true;
+        uri = UriParser.Default.TryParse(encodedString);
+        return uri is not null;
     }
 
     public Uri(EncodedString encodedString)
-    : this(encodedString, UriParser.Default.TryParse(encodedString) ?? throw new UriFormatException($"Invalid Uri format: {encodedString.ToEncodedString()}"))
+    : this(UriParser.Default.TryParse(encodedString) ?? throw new UriFormatException($"Invalid Uri format: {encodedString.ToEncodedString()}"))
     {
     }
 
     public Uri(string encodedString)
-    : this(EncodedString.FromEncoded(encodedString)!, UriParser.Default.TryParse(encodedString) ?? throw new UriFormatException($"Invalid Uri format: {encodedString}"))
+    : this(UriParser.Default.TryParse(encodedString) ?? throw new UriFormatException($"Invalid Uri format: {encodedString}"))
     {
     }
 
-    private Uri(EncodedString encodedString, UriComponentParts parts)
+    private Uri(Uri uri)
+    : this(uri.OriginalString, uri.Scheme, uri.HierPart, uri.Authority, uri.UserInfo, uri.DecodedUserInfo, null, uri.IdnHost, uri.DnsSafeHost, uri.Port, uri.AbsolutePath, uri.Segments, uri.Query, uri.Fragment)
+    {
+    }
+
+    public Uri(EncodedString encodedString, string? scheme, EncodedString hierPart, EncodedString? authority,
+        EncodedString? userInfo, NetworkCredential? decodedUserInfo, EncodedString? host, string? idnHost,
+        string? dnsSafeHost, int? port, EncodedString path, IEnumerable<string> segments, EncodedString? query, EncodedString? fragment)
     {
         OriginalString = encodedString;
-        AbsolutePath = parts.Path;
-        Authority = parts.Authority;
-        DnsSafeHost = parts.DnsSafeHost;
-        IdnHost = parts.IdnHost;
-        LocalPath = parts.Path.Decode();
-        Port = parts.Port;
-        Scheme = parts.Scheme;
-        Segments = new ReadOnlyCollection<string>(parts.Segments.ToList());
-        UserInfo = parts.UserInfo;
-        DecodedUserInfo = parts.DecodedUserInfo;
-        Query = parts.Query;
-        Fragment = parts.Fragment;
+        AbsolutePath = path;
+        Authority = authority;
+        DnsSafeHost = dnsSafeHost;
+        IdnHost = idnHost;
+        LocalPath = path.Decode();
+        Port = port;
+        Scheme = scheme;
+        HierPart = hierPart;
+        Segments = new ReadOnlyCollection<string>(segments.ToList());
+        UserInfo = userInfo;
+        DecodedUserInfo = decodedUserInfo;
+        Query = query;
+        Fragment = fragment;
     }
 
     public EncodedString Encode()
