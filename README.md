@@ -31,7 +31,7 @@ Currently, you don’t.
 - [x] Work on `EncodedString` instead of `string`
 - [x] User info splitter
 - [x] Host name decoder
-- [ ] Create `Peasy.Uri` class
+- [x] Create `Peasy.Uri` class
 - [ ] HTTP specific query decoding
 - [ ] Get default port (from `Uri`?)
 - [ ] Add an URI creator (see how)
