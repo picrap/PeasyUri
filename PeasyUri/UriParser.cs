@@ -59,11 +59,10 @@ public class UriParser
         var segments = ParsePath(authorityAndPath.Path);
         var authority = ParseAuthority(authorityAndPath.Authority);
         var dnsSafeHost = GetDnsSafeHost(authority?.Host);
-        var decodedHost = GetIdnHost(dnsSafeHost);
+        var idnHost = GetIdnHost(dnsSafeHost);
         var userInfo = ParseUserInfo(authority?.UserInfo);
 
-        return new Uri(literal, scheme, hierPart, authorityAndPath.Authority, authority?.UserInfo, userInfo,
-            authority?.Host, decodedHost, dnsSafeHost, authority?.Port, authorityAndPath.Path, segments, query,
+        return new Uri(literal, scheme, hierPart, authorityAndPath.Authority, authority?.UserInfo, userInfo, idnHost, dnsSafeHost, authority?.Port, authorityAndPath.Path, segments, query,
             fragment);
     }
 

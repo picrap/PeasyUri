@@ -66,12 +66,12 @@ public class Uri
     }
 
     private Uri(Uri uri)
-    : this(uri.OriginalString, uri.Scheme, uri.HierPart, uri.Authority, uri.UserInfo, uri.DecodedUserInfo, null, uri.IdnHost, uri.DnsSafeHost, uri.Port, uri.AbsolutePath, uri.Segments, uri.Query, uri.Fragment)
+    : this(uri.OriginalString, uri.Scheme, uri.HierPart, uri.Authority, uri.UserInfo, uri.DecodedUserInfo, uri.IdnHost, uri.DnsSafeHost, uri.Port, uri.AbsolutePath, uri.Segments, uri.Query, uri.Fragment)
     {
     }
 
     public Uri(EncodedString encodedString, string? scheme, EncodedString hierPart, EncodedString? authority,
-        EncodedString? userInfo, NetworkCredential? decodedUserInfo, EncodedString? host, string? idnHost,
+        EncodedString? userInfo, NetworkCredential? decodedUserInfo, string? idnHost,
         string? dnsSafeHost, int? port, EncodedString path, IEnumerable<string> segments, EncodedString? query, EncodedString? fragment)
     {
         OriginalString = encodedString;
