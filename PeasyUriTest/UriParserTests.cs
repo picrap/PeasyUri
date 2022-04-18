@@ -162,4 +162,15 @@ public class UriParserTests
         Assert.IsTrue(uri.DnsSafeHost == "2a00::5678");
         Assert.IsTrue(uri.Port == 1234);
     }
+
+
+    [Test]
+    public void HttpQueryTest()
+    {
+        var literalUri = "http://host?1=one&2=two#3=notthree";
+        var uri = new Uri(EncodedString.FromEncoded(literalUri)!);
+        Assert.IsTrue(uri.QueryValues.TryGetValue("1", out var one) && one == "one");
+        Assert.IsTrue(uri.QueryValues.TryGetValue("2", out var two) && two == "two");
+        Assert.IsFalse(uri.QueryValues.ContainsKey("3"));
+    }
 }

@@ -37,6 +37,8 @@ public class Uri
 
     public EncodedString? Fragment { get; }
 
+    public IDictionary<string, string?>? QueryValues { get; }
+
     public static bool TryParse(string? rawString, out Uri? uri) => TryParse(EncodedString.FromEncoded(rawString), out uri);
 
     /// <summary>
@@ -90,6 +92,27 @@ public class Uri
         DecodedUserInfo = decodedUserInfo;
         Query = query;
         Fragment = fragment;
+        if (query is not null)
+            QueryValues = ParseQuery(query).ToDictionary(kv => kv.Key, kv => kv.Value);
+    }
+
+    private IEnumerable<KeyValuePair<string, string?>> ParseQuery(EncodedString query)
+    {
+        var keyValues = query.Split('&');
+        foreach (var keyValue in keyValues)
+        {
+            var keyIndex = keyValue.IndexOf('=');
+            if (keyIndex.HasValue)
+            {
+                var key = keyValue.Substring(0, keyIndex.Value);
+                var value = keyValue.Substring(keyIndex.Value + 1);
+                yield return new(key.Decode(), value.Decode());
+            }
+            else
+            {
+                yield return new(keyValue.Decode(), null);
+            }
+        }
     }
 
     public EncodedString Encode()

@@ -177,6 +177,7 @@ public class EncodedString : IEquatable<EncodedString>, IEnumerable<byte>
 
     public static bool operator !=(EncodedString? a, string? b) => !(a == b);
 
+    public EncodedString Substring(int start) => Substring(start, Length - start);
     public EncodedString Substring(int start, int offset) => new(_bytes.Skip(start).Take(offset));
 
     public IEnumerable<EncodedString> Split(char c)

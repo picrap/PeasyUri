@@ -32,6 +32,6 @@ Currently, you don’t.
 - [x] User info splitter
 - [x] Host name decoder
 - [x] Create `Peasy.Uri` class
-- [ ] HTTP specific query decoding
+- [x] HTTP specific query decoding
 - [ ] Get default port (from `Uri`?)
 - [ ] Add an URI creator (see how)
