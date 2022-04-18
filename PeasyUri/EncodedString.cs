@@ -2,7 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.Policy;
 using System.Text;
 using PeasyUri.Utility;
 
@@ -252,5 +255,45 @@ public class EncodedString : IEquatable<EncodedString>, IEnumerable<byte>
     public static EncodedString operator +(string a, EncodedString b)
     {
         return new EncodedString(FromEncoded(a)!._bytes.Concat(b._bytes));
+    }
+
+    //public static EncodedString? ReadLine(Stream stream)
+    //{
+    //    var buffer = new List<byte>();
+    //    int eolCount = 0;
+    //    for (; ; )
+    //    {
+    //        var b = stream.ReadByte();
+    //        if (b == -1)
+    //        {
+    //            if (buffer.Count == 0)
+    //                return null;
+    //            break;
+    //        }
+    //        if (b == Environment.NewLine[eolCount])
+    //        {
+    //            if (++eolCount >= Environment.NewLine.Length)
+    //                break;
+    //            continue;
+    //        }
+    //        // wrong EOL
+    //        if (eolCount > 0)
+    //            break;
+    //        buffer.Add((byte)b);
+    //    }
+    //    return new EncodedString(buffer);
+    //}
+
+    public static EncodedString? ReadLine(TextReader textReader)
+    {
+        var line = textReader.ReadLine();
+        if (line is null)
+            return null;
+        return FromEncoded(line);
+    }
+
+    public void WriteLine(TextWriter textWriter)
+    {
+        textWriter.WriteLine(ToEncodedString());
     }
 }

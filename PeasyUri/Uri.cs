@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Net;
 
@@ -17,6 +18,7 @@ public class Uri
     public ICollection<string> Segments { get; }
 
     public string? Scheme { get; }
+
     public EncodedString HierPart { get; }
 
     public int? Port { get; }
@@ -96,6 +98,8 @@ public class Uri
         if (Scheme is not null)
             encodedString += Scheme + ":";
         // TODO: use IdnHost and cracked authority
+        //if (IdnHost is not null)
+        //    encodedString += "//"+ IdnHost;
         if (Authority is not null)
             encodedString += "//" + Authority;
         encodedString += AbsolutePath;
@@ -104,5 +108,19 @@ public class Uri
         if (Fragment is not null)
             encodedString += "#" + Fragment;
         return encodedString;
+    }
+
+    public static Uri? TryRead(TextReader textReader)
+    {
+        var encodedString = EncodedString.ReadLine(textReader);
+        if (encodedString is null)
+            return null;
+        TryParse(encodedString, out var uri);
+        return uri;
+    }
+
+    public void Write(TextWriter textWriter)
+    {
+        Encode().WriteLine(textWriter);
     }
 }
